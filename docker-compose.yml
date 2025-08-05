@@ -1,65 +1,28 @@
-# Docker-compose is a way to run multiple containers at once and connect them
-# This sets up and runs postgres and the django dev server as services
-# Reference: https://docs.docker.com/compose/compose-file/
-
-# Initial setup with
-# $ docker-compose -f docker-compose.yml up
-
-# Can run management commands with
-# $ docker-compose run web /code/manage.py whatever
-
-version: '3'
-
 services:
   db:
-    image: postgres:12
+    image: postgres:15
+    restart: unless-stopped
     environment:
-      - POSTGRES_PASSWORD=tabbycat
-      - POSTGRES_USER=tabbycat
-      - POSTGRES_DB=tabbycat
-    volumes:
-      - pgdata:/var/lib/postgresql/data
+      POSTGRES_DB: tabbycat
+      POSTGRES_USER: tabby
+      POSTGRES_PASSWORD: tabby
 
   redis:
-    image: redis:6
-    volumes:
-     - redis_data:/data
+    image: redis:7
+    restart: unless-stopped
 
   web:
-    build: .
-    # Hack to wait until Postgres is up before running things
-    command: ["./bin/docker-wait.sh", "--timeout=0", "db:5432", "--", "./bin/docker-run-honcho.sh"]
-    depends_on:
-      - db
-      - redis
-    expose:
-      - "8000"
-    environment:
-      - DEBUG=1
-      - IN_DOCKER=1
-      - DISABLE_SENTRY=1
-      - DOCKER_REDIS=1
-      - USING_NGINX=1
+    build:
+      context: .
+    command: >
+      bash -c "
+        python3 tabbycat/manage.py migrate &&
+        gunicorn tabbycat.wsgi:application --bind 0.0.0.0:8000
+      "
+    env_file:
+      - .env
     ports:
       - "8000:8000"
-    working_dir: /tcd
-
-  worker:
-    build: .
-    # Hack to wait until migration is done before running things
-    command: ["./bin/docker-wait.sh", "--timeout=0", "web:8000", "--", "./bin/docker-run-worker.sh"]
     depends_on:
       - db
       - redis
-    environment:
-      - DEBUG=1
-      - IN_DOCKER=1
-      - DISABLE_SENTRY=1
-      - DOCKER_REDIS=1
-      - USING_NGINX=1
-    working_dir: /tcd
-
-volumes:
-  pgdata:
-  node_modules:
-  redis_data:
