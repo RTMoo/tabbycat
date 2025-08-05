@@ -315,7 +315,12 @@ X_FRAME_OPTIONS = 'SAMEORIGIN' # Necessary to get Django-Summernote working beca
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-    },
+        'NAME': os.environ.get('POSTGRES_DB', 'tabbycat'),
+        'USER': os.environ.get('POSTGRES_USER', 'tabbycat'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'password'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'db'),
+        'PORT': os.environ.get('POSTGRES_PORT', '5432'),
+    }
 }
 
 DEFAULT_AUTO_FIELD = 'django.db.models.AutoField'

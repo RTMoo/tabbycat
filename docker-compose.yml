@@ -2,10 +2,10 @@ services:
   db:
     image: postgres:15
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: tabbycat
-      POSTGRES_USER: tabby
-      POSTGRES_PASSWORD: tabby
+    env_file:
+      - .env
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   redis:
     image: redis:7
